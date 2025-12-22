@@ -1,65 +1,218 @@
-import Image from "next/image";
+"use client";
+
+import { useMemo, useState } from "react";
+
+type Result = {
+  price_eur: number;
+  rationale: string;
+  offer_text: string;
+  scope_bullets: string[];
+};
 
 export default function Home() {
+  const [projectType, setProjectType] = useState("Website");
+  const [scope, setScope] = useState("5 Seiten, Kontaktformular, Basic SEO");
+  const [deadline, setDeadline] = useState("Normal (2–4 Wochen)");
+  const [experience, setExperience] = useState("Mid");
+  const [risk, setRisk] = useState("Normal");
+  const [targetHourly, setTargetHourly] = useState("85");
+  const [proCode, setProCode] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [res, setRes] = useState<Result | null>(null);
+
+  const payload = useMemo(
+    () => ({
+      projectType,
+      scope,
+      deadline,
+      experience,
+      risk,
+      targetHourly: Number(targetHourly || 0),
+      proCode: proCode.trim(),
+    }),
+    [projectType, scope, deadline, experience, risk, targetHourly, proCode]
+  );
+
+  async function generate() {
+    setLoading(true);
+    setErr(null);
+    setRes(null);
+    try {
+      const r = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.error || "Fehler");
+      setRes(data as Result);
+    } catch (e: any) {
+      setErr(e?.message || "Fehler");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main
+      style={{
+        maxWidth: 860,
+        margin: "32px auto",
+        padding: "0 16px",
+        fontFamily: "system-ui",
+      }}
+    >
+      <h1>KI-Angebot & Preisgenerator (V0.1)</h1>
+
+      <p>
+        Gib Eckdaten ein → du bekommst Preisvorschlag, Begründung und einen
+        fertigen Angebotstext.
+        <br />
+        <small>Hinweis: Keine Steuer- oder Rechtsberatung. Richtwerte.</small>
+      </p>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 12,
+        }}
+      >
+        <label>
+          Projektart
+          <select
+            value={projectType}
+            onChange={(e) => setProjectType(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+          >
+            <option>Website</option>
+            <option>Web-App</option>
+            <option>Design</option>
+            <option>SEO</option>
+            <option>Text/Copy</option>
+            <option>Beratung</option>
+          </select>
+        </label>
+
+        <label>
+          Erfahrung
+          <select
+            value={experience}
+            onChange={(e) => setExperience(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+          >
+            <option>Junior</option>
+            <option>Mid</option>
+            <option>Senior</option>
+          </select>
+        </label>
+
+        <label>
+          Deadline
+          <select
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+          >
+            <option>Normal (2–4 Wochen)</option>
+            <option>Schnell (7–14 Tage)</option>
+            <option>Express (≤ 7 Tage)</option>
+          </select>
+        </label>
+
+        <label>
+          Projektrisiko / Unklarheit
+          <select
+            value={risk}
+            onChange={(e) => setRisk(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+          >
+            <option>Normal</option>
+            <option>Mittel (unklare Anforderungen)</option>
+            <option>Hoch (viele Abhängigkeiten)</option>
+          </select>
+        </label>
+
+        <label style={{ gridColumn: "1 / -1" }}>
+          Umfang (kurz)
+          <input
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+          />
+        </label>
+
+        <label>
+          Ziel-Stundensatz (€) (optional)
+          <input
+            value={targetHourly}
+            onChange={(e) => setTargetHourly(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+          />
+        </label>
+
+        <label>
+          Pro-Code (optional)
+          <input
+            value={proCode}
+            onChange={(e) => setProCode(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+          />
+        </label>
+      </div>
+
+      <button
+        onClick={generate}
+        disabled={loading}
+        style={{
+          marginTop: 16,
+          padding: "10px 14px",
+          cursor: "pointer",
+        }}
+      >
+        {loading ? "Generiere..." : "Preis & Angebot erzeugen"}
+      </button>
+
+      {err && <p style={{ color: "crimson" }}>{err}</p>}
+
+      {res && (
+        <div
+          style={{
+            marginTop: 18,
+            border: "1px solid #ddd",
+            borderRadius: 10,
+            padding: 14,
+          }}
+        >
+          <h2>Ergebnis</h2>
+
+          <p>
+            <b>Empfohlener Projektpreis:</b>{" "}
+            €{res.price_eur.toLocaleString("de-DE")}
           </p>
+
+          <p>
+            <b>Begründung:</b> {res.rationale}
+          </p>
+
+          <h3>Leistungsumfang</h3>
+          <ul>
+            {res.scope_bullets.map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
+
+          <h3>Angebotstext</h3>
+          <textarea
+            value={res.offer_text}
+            readOnly
+            style={{ width: "100%", minHeight: 260, padding: 10 }}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
+
