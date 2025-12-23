@@ -174,7 +174,19 @@ export default function Home() {
       >
         {loading ? "Generiere..." : "Preis & Angebot erzeugen"}
       </button>
-
+<p style={{ marginTop: 12 }}>
+  <a
+    href="https://jorisrudolf.gumroad.com/l/thfnd"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
+      fontWeight: 600,
+      textDecoration: "underline",
+    }}
+  >
+    PRO freischalten (20 Angebote/Tag)
+  </a>
+</p>
       {err && <p style={{ color: "crimson" }}>{err}</p>}
 
       {res && (
@@ -215,4 +227,3 @@ export default function Home() {
     </main>
   );
 }
-
